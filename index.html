@@ -14,7 +14,6 @@
       background: black;
       font-family: Arial, sans-serif;
       touch-action: none;
-      -webkit-text-size-adjust: 100%;
       color: white;
     }
 
@@ -109,7 +108,6 @@
       top: -28px;
       font-size: 18px;
       transform: translateX(-50%);
-      white-space: nowrap;
     }
 
     #playerChar { left: 0%; }
@@ -121,7 +119,6 @@
       width: 100%;
       display: flex;
       justify-content: space-between;
-      align-items: center;
       padding: 0 30px;
       z-index: 40;
     }
@@ -216,12 +213,12 @@ let gameRunning = true;
 let gameStarted = false;
 
 let asteroids = [];
-let score = 0;
 
-const MAX_DISTANCE = 10000;
+const TOTAL_DISTANCE = 12000;
+let traveled = 0;
 
 let earth = {
-  x: canvas.width + 12000,
+  x: canvas.width,
   y: canvas.height / 2,
   size: 150
 };
@@ -229,14 +226,24 @@ let earth = {
 let earthAge = 20;
 let shipAge = 20;
 
+/* FIXED: instructions hide on any input */
+function hideInstructions() {
+  if (!gameStarted) {
+    gameStarted = true;
+    const box = document.getElementById("instructions");
+    box.style.opacity = 0;
+    setTimeout(() => box.style.display = "none", 500);
+  }
+}
+
 /* CONTROLS */
-document.getElementById("upBtn").ontouchstart = () => movingUp = true;
+document.getElementById("upBtn").ontouchstart = () => { hideInstructions(); movingUp = true; };
 document.getElementById("upBtn").ontouchend = () => movingUp = false;
 
-document.getElementById("downBtn").ontouchstart = () => movingDown = true;
+document.getElementById("downBtn").ontouchstart = () => { hideInstructions(); movingDown = true; };
 document.getElementById("downBtn").ontouchend = () => movingDown = false;
 
-document.getElementById("boostBtn").ontouchstart = () => thrusting = true;
+document.getElementById("boostBtn").ontouchstart = () => { hideInstructions(); thrusting = true; };
 document.getElementById("boostBtn").ontouchend = () => thrusting = false;
 
 function spawnAsteroid() {
@@ -266,27 +273,32 @@ function update() {
   let worldSpeed = speed * gamma * 2.2;
   let timeFactor = Math.sqrt(1 - speed * speed);
 
+  /* ASTEROIDS */
   asteroids.forEach(a => {
     a.x -= (a.speed + worldSpeed);
 
-    let hitSize = 30;
-    if (Math.abs(ship.x - a.x) < hitSize &&
-        Math.abs(ship.y - a.y) < hitSize) {
+    if (Math.abs(ship.x - a.x) < 30 &&
+        Math.abs(ship.y - a.y) < 30) {
       gameOver();
     }
   });
 
   asteroids = asteroids.filter(a => a.x > -200);
 
-  earth.x -= worldSpeed;
+  if (Math.random() < 0.05) spawnAsteroid();
 
-  if (Math.abs(ship.x - earth.x) < earth.size) winGame();
+  /* PROGRESS SYSTEM (SYNCED) */
+  traveled += worldSpeed;
 
-  score += 1 + speed * 3;
+  let progress = Math.min(traveled / TOTAL_DISTANCE, 1);
 
-  document.getElementById("barFill").style.width =
-    Math.min(score / MAX_DISTANCE, 1) * 100 + "%";
+  earth.x = canvas.width + 200 - (canvas.width + 200) * progress;
 
+  document.getElementById("barFill").style.width = (progress * 100) + "%";
+
+  if (progress >= 1) winGame();
+
+  /* TIME DILATION */
   earthAge += 0.001;
   shipAge += 0.001 * timeFactor;
 
@@ -295,30 +307,29 @@ function update() {
   document.getElementById("earthAge").innerText = earthAge.toFixed(2);
   document.getElementById("diff").innerText =
     (earthAge - shipAge).toFixed(2);
-
-  /* increased spawn rate */
-  if (Math.random() < 0.05) spawnAsteroid();
 }
 
 function draw() {
   ctx.clearRect(0,0,canvas.width,canvas.height);
 
+  /* EARTH */
   ctx.fillStyle = "rgba(0,150,255,0.8)";
   ctx.beginPath();
   ctx.arc(earth.x, earth.y, earth.size, 0, Math.PI * 2);
   ctx.fill();
 
+  /* SHIP */
   ctx.fillStyle = "white";
   ctx.fillRect(ship.x, ship.y, 20, 10);
 
+  /* ASTEROIDS WITH LENGTH CONTRACTION */
   asteroids.forEach(a => {
     let gamma = 1 / Math.sqrt(1 - speed * speed);
-
-    let contractedSize = a.size / gamma;
+    let contracted = a.size / gamma;
 
     ctx.fillStyle = "gray";
     ctx.beginPath();
-    ctx.arc(a.x, a.y, contractedSize, 0, Math.PI * 2);
+    ctx.arc(a.x, a.y, contracted, 0, Math.PI * 2);
     ctx.fill();
   });
 }
@@ -333,7 +344,7 @@ function gameOver() {
 function winGame() {
   gameRunning = false;
   document.getElementById("gameOver").innerHTML =
-    "MISSION COMPLETE<br><button onclick='location.reload()'>PLAY AGAIN</button>";
+    "EARTH REACHED<br><button onclick='location.reload()'>PLAY AGAIN</button>";
   document.getElementById("gameOver").style.display = "block";
 }
 
