@@ -27,16 +27,12 @@
       position: fixed;
       top: 10px;
       right: 10px;
-
       font-size: clamp(12px, 3.5vw, 16px);
       line-height: 1.4;
-
       background: rgba(0,0,0,0.65);
       padding: 10px 12px;
-
       border-radius: 10px;
       border: 1px solid rgba(255,255,255,0.2);
-
       z-index: 20;
       min-width: 140px;
     }
@@ -46,18 +42,13 @@
       top: 50%;
       left: 50%;
       transform: translate(-50%, -50%);
-
       width: 82%;
-
       background: rgba(0,0,0,0.85);
       padding: 20px;
-
       border-radius: 14px;
       border: 1px solid rgba(255,255,255,0.2);
-
       text-align: center;
       z-index: 50;
-
       transition: opacity 0.5s;
     }
 
@@ -76,16 +67,15 @@
       top: 40%;
       width: 100%;
       text-align: center;
-
       font-size: clamp(24px, 6vw, 34px);
-
       display: none;
       z-index: 30;
     }
 
+    /* SAFE PROGRESS BAR POSITION (NO OVERLAP) */
     #barWrapper {
       position: fixed;
-      bottom: 120px;
+      bottom: 190px;
       left: 50%;
       transform: translateX(-50%);
       width: 88%;
@@ -140,21 +130,15 @@
     .btn {
       width: clamp(60px, 16vw, 80px);
       height: clamp(60px, 16vw, 80px);
-
       border-radius: 50%;
       border: 2px solid rgba(255,255,255,0.4);
-
       background: rgba(255,255,255,0.1);
       color: white;
-
       font-size: clamp(14px, 4vw, 18px);
-
       display: flex;
       justify-content: center;
       align-items: center;
-
       user-select: none;
-      -webkit-user-select: none;
     }
 
     .btn:active {
@@ -329,7 +313,6 @@ function update() {
 
   asteroids.forEach(a => {
     a.x -= (a.speed + worldSpeed);
-
     if (Math.abs(ship.x - a.x) < 30 && Math.abs(ship.y - a.y) < 30) {
       gameOver();
     }
@@ -409,11 +392,6 @@ function loop() {
   requestAnimationFrame(loop);
 }
 loop();
-
-window.addEventListener("resize", () => {
-  canvas.width = window.innerWidth;
-  canvas.height = window.innerHeight;
-});
 </script>
 
 </body>
