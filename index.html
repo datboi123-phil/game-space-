@@ -343,18 +343,28 @@ function update() {
 function draw() {
   ctx.clearRect(0,0,canvas.width,canvas.height);
 
+  // Earth
   ctx.fillStyle = "rgba(0,150,255,0.8)";
   ctx.beginPath();
   ctx.arc(earth.x, earth.y, earth.size, 0, Math.PI * 2);
   ctx.fill();
 
+  // Ship
   ctx.fillStyle = "white";
   ctx.fillRect(ship.x, ship.y, 20, 10);
 
+  // ASTEROIDS with length contraction effect
   asteroids.forEach(a => {
+
+    // relativistic contraction factor
+    let gamma = 1 / Math.sqrt(1 - speed * speed);
+
+    // contract only visually (not physics speed)
+    let contractedSize = a.size / gamma;
+
     ctx.fillStyle = "gray";
     ctx.beginPath();
-    ctx.arc(a.x, a.y, a.size, 0, Math.PI * 2);
+    ctx.arc(a.x, a.y, contractedSize, 0, Math.PI * 2);
     ctx.fill();
   });
 }
