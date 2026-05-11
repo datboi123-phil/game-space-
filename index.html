@@ -51,16 +51,6 @@
       transition: opacity 0.5s;
     }
 
-    #instructions h2 {
-      margin-top: 0;
-      font-size: clamp(18px, 5vw, 26px);
-    }
-
-    #instructions p {
-      font-size: clamp(12px, 3.8vw, 15px);
-      margin: 8px 0;
-    }
-
     #gameOver {
       position: fixed;
       top: 40%;
@@ -226,7 +216,7 @@ let earth = {
 let earthAge = 20;
 let shipAge = 20;
 
-/* FIXED: instructions hide on any input */
+/* instructions hide */
 function hideInstructions() {
   if (!gameStarted) {
     gameStarted = true;
@@ -236,7 +226,7 @@ function hideInstructions() {
   }
 }
 
-/* CONTROLS */
+/* controls */
 document.getElementById("upBtn").ontouchstart = () => { hideInstructions(); movingUp = true; };
 document.getElementById("upBtn").ontouchend = () => movingUp = false;
 
@@ -273,7 +263,7 @@ function update() {
   let worldSpeed = speed * gamma * 2.2;
   let timeFactor = Math.sqrt(1 - speed * speed);
 
-  /* ASTEROIDS */
+  /* asteroids movement + collision */
   asteroids.forEach(a => {
     a.x -= (a.speed + worldSpeed);
 
@@ -287,7 +277,7 @@ function update() {
 
   if (Math.random() < 0.05) spawnAsteroid();
 
-  /* PROGRESS SYSTEM (SYNCED) */
+  /* progress system */
   traveled += worldSpeed;
 
   let progress = Math.min(traveled / TOTAL_DISTANCE, 1);
@@ -298,7 +288,7 @@ function update() {
 
   if (progress >= 1) winGame();
 
-  /* TIME DILATION */
+  /* time dilation */
   earthAge += 0.001;
   shipAge += 0.001 * timeFactor;
 
@@ -312,24 +302,36 @@ function update() {
 function draw() {
   ctx.clearRect(0,0,canvas.width,canvas.height);
 
-  /* EARTH */
+  /* earth */
   ctx.fillStyle = "rgba(0,150,255,0.8)";
   ctx.beginPath();
   ctx.arc(earth.x, earth.y, earth.size, 0, Math.PI * 2);
   ctx.fill();
 
-  /* SHIP */
+  /* ship */
   ctx.fillStyle = "white";
   ctx.fillRect(ship.x, ship.y, 20, 10);
 
-  /* ASTEROIDS WITH LENGTH CONTRACTION */
+  /* asteroids WITH proper length contraction (X-axis only) */
   asteroids.forEach(a => {
     let gamma = 1 / Math.sqrt(1 - speed * speed);
-    let contracted = a.size / gamma;
+
+    let contractedWidth = a.size / gamma;  // X-axis
+    let height = a.size;                   // Y-axis unchanged
 
     ctx.fillStyle = "gray";
     ctx.beginPath();
-    ctx.arc(a.x, a.y, contracted, 0, Math.PI * 2);
+
+    ctx.ellipse(
+      a.x,
+      a.y,
+      contractedWidth,
+      height,
+      0,
+      0,
+      Math.PI * 2
+    );
+
     ctx.fill();
   });
 }
