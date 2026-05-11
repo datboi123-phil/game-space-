@@ -26,29 +26,11 @@
       position: fixed;
       top: 10px;
       right: 10px;
-      font-size: clamp(12px, 3.5vw, 16px);
-      line-height: 1.4;
-      background: rgba(0,0,0,0.65);
-      padding: 10px 12px;
+      font-size: 14px;
+      background: rgba(0,0,0,0.6);
+      padding: 10px;
       border-radius: 10px;
-      border: 1px solid rgba(255,255,255,0.2);
       z-index: 20;
-      min-width: 140px;
-    }
-
-    #instructions {
-      position: fixed;
-      top: 50%;
-      left: 50%;
-      transform: translate(-50%, -50%);
-      width: 82%;
-      background: rgba(0,0,0,0.85);
-      padding: 20px;
-      border-radius: 14px;
-      border: 1px solid rgba(255,255,255,0.2);
-      text-align: center;
-      z-index: 50;
-      transition: opacity 0.5s;
     }
 
     #gameOver {
@@ -56,27 +38,26 @@
       top: 40%;
       width: 100%;
       text-align: center;
-      font-size: clamp(24px, 6vw, 34px);
+      font-size: 28px;
       display: none;
       z-index: 30;
     }
 
     #barWrapper {
       position: fixed;
-      bottom: 190px;
+      bottom: 180px;
       left: 50%;
       transform: translateX(-50%);
-      width: 88%;
+      width: 85%;
       z-index: 15;
     }
 
     #barContainer {
-      position: relative;
       width: 100%;
-      height: 22px;
-      background: rgba(255,255,255,0.12);
+      height: 20px;
+      background: rgba(255,255,255,0.15);
       border: 2px solid white;
-      border-radius: 12px;
+      border-radius: 10px;
       overflow: hidden;
     }
 
@@ -88,32 +69,28 @@
 
     #controls {
       position: fixed;
-      bottom: 12px;
+      bottom: 10px;
       width: 100%;
       display: flex;
       justify-content: space-between;
-      padding: 0 30px;
+      padding: 0 25px;
       z-index: 40;
     }
 
     .btn {
-      width: clamp(60px, 16vw, 80px);
-      height: clamp(60px, 16vw, 80px);
+      width: 70px;
+      height: 70px;
       border-radius: 50%;
-      border: 2px solid rgba(255,255,255,0.4);
+      border: 2px solid white;
       background: rgba(255,255,255,0.1);
       color: white;
-      font-size: clamp(14px, 4vw, 18px);
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      user-select: none;
+      font-size: 16px;
     }
 
     #boostBtn {
-      width: clamp(75px, 18vw, 95px);
-      height: clamp(75px, 18vw, 95px);
-      background: rgba(255,140,0,0.18);
+      width: 85px;
+      height: 85px;
+      background: rgba(255,140,0,0.2);
     }
   </style>
 </head>
@@ -122,15 +99,8 @@
 
 <div id="ui">
   SPEED <span id="speed">0.20c</span><br>
-  YOU AGE <span id="shipAge">20.00</span><br>
-  TWIN AGE <span id="earthAge">20.00</span><br>
-  DIFFERENCE <span id="diff">0.00</span>
-</div>
-
-<div id="instructions">
-  <h2>MOBILE CONTROLS</h2>
-  <p>UP / DOWN to move</p>
-  <p>BOOST to accelerate</p>
+  YOU AGE <span id="shipAge">20</span><br>
+  TWIN AGE <span id="earthAge">20</span>
 </div>
 
 <div id="gameOver"></div>
@@ -143,10 +113,10 @@
 
 <div id="controls">
   <div>
-    <div class="btn" id="upBtn">UP</div>
-    <div class="btn" id="downBtn">DOWN</div>
+    <button class="btn" id="upBtn">UP</button><br><br>
+    <button class="btn" id="downBtn">DOWN</button>
   </div>
-  <div class="btn" id="boostBtn">BOOST</div>
+  <button class="btn" id="boostBtn">BOOST</button>
 </div>
 
 <canvas id="game"></canvas>
@@ -161,60 +131,62 @@ canvas.height = window.innerHeight;
 let ship = {
   x: canvas.width * 0.2,
   y: canvas.height / 2,
-  velocityY: 0
+  vy: 0
 };
 
 let speed = 0.2;
-let thrusting = false;
-let movingUp = false;
-let movingDown = false;
-let gameRunning = true;
+let up = false;
+let down = false;
+let boost = false;
+let running = true;
 
 let asteroids = [];
+let fire = [];
+
+const DIST = 12000;
 let traveled = 0;
 
-const TOTAL_DISTANCE = 12000;
+/* CONTROLS */
+upBtn.ontouchstart = () => up = true;
+upBtn.ontouchend = () => up = false;
 
-/* FIRE PARTICLES */
-let fireParticles = [];
+downBtn.ontouchstart = () => down = true;
+downBtn.ontouchend = () => down = false;
 
-function spawnFire() {
-  fireParticles.push({
-    x: ship.x - 10,
-    y: ship.y + 5 + (Math.random() * 6 - 3),
-    vx: -Math.random() * 3 - 2,
-    life: 1
-  });
-}
+boostBtn.ontouchstart = () => boost = true;
+boostBtn.ontouchend = () => boost = false;
 
-document.getElementById("upBtn").ontouchstart = () => movingUp = true;
-document.getElementById("upBtn").ontouchend = () => movingUp = false;
-
-document.getElementById("downBtn").ontouchstart = () => movingDown = true;
-document.getElementById("downBtn").ontouchend = () => movingDown = false;
-
-document.getElementById("boostBtn").ontouchstart = () => thrusting = true;
-document.getElementById("boostBtn").ontouchend = () => thrusting = false;
-
+/* ASTEROID */
 function spawnAsteroid() {
   asteroids.push({
     x: canvas.width + 100,
     y: Math.random() * canvas.height,
-    size: Math.random() * 24 + 14,
+    size: Math.random() * 25 + 15,
     speed: 2 + Math.random() * 2
   });
 }
 
+/* FIRE */
+function spawnFire() {
+  fire.push({
+    x: ship.x - 15,
+    y: ship.y + 5 + (Math.random() * 6 - 3),
+    vx: -Math.random() * 5 - 3,
+    life: 1,
+    size: Math.random() * 5 + 3
+  });
+}
+
 function update() {
-  if (!gameRunning) return;
+  if (!running) return;
 
-  if (movingUp) ship.velocityY -= 0.4;
-  if (movingDown) ship.velocityY += 0.4;
+  if (up) ship.vy -= 0.4;
+  if (down) ship.vy += 0.4;
 
-  ship.velocityY *= 0.92;
-  ship.y += ship.velocityY;
+  ship.vy *= 0.92;
+  ship.y += ship.vy;
 
-  if (thrusting) {
+  if (boost) {
     speed += 0.003 * (1 - speed);
     spawnFire();
   } else {
@@ -225,15 +197,13 @@ function update() {
 
   let gamma = 1 / Math.sqrt(1 - speed * speed);
   let worldSpeed = speed * gamma * 2.2;
-  let timeFactor = Math.sqrt(1 - speed * speed);
 
-  /* FIRE UPDATE */
-  fireParticles.forEach(p => {
-    p.x += p.vx;
-    p.life -= 0.03;
+  /* FIRE */
+  fire.forEach(f => {
+    f.x += f.vx;
+    f.life -= 0.04;
   });
-
-  fireParticles = fireParticles.filter(p => p.life > 0);
+  fire = fire.filter(f => f.life > 0);
 
   /* ASTEROIDS */
   asteroids.forEach(a => {
@@ -252,21 +222,29 @@ function update() {
   /* PROGRESS */
   traveled += worldSpeed;
 
-  let progress = Math.min(traveled / TOTAL_DISTANCE, 1);
+  let progress = Math.min(traveled / DIST, 1);
 
   document.getElementById("barFill").style.width = (progress * 100) + "%";
 
   if (progress >= 1) winGame();
+
+  document.getElementById("speed").innerText = speed.toFixed(2) + "c";
 }
 
 function draw() {
   ctx.clearRect(0,0,canvas.width,canvas.height);
 
-  /* FIRE (behind ship) */
-  fireParticles.forEach(p => {
-    ctx.fillStyle = `rgba(255,150,0,${p.life})`;
+  /* FIRE GLOW */
+  ctx.fillStyle = "rgba(255,120,0,0.25)";
+  ctx.beginPath();
+  ctx.ellipse(ship.x - 15, ship.y + 5, 20, 10, 0, 0, Math.PI * 2);
+  ctx.fill();
+
+  /* FIRE */
+  fire.forEach(f => {
+    ctx.fillStyle = `rgba(255,140,0,${f.life})`;
     ctx.beginPath();
-    ctx.arc(p.x, p.y, 3, 0, Math.PI * 2);
+    ctx.arc(f.x, f.y, f.size, 0, Math.PI * 2);
     ctx.fill();
   });
 
@@ -274,7 +252,7 @@ function draw() {
   ctx.fillStyle = "white";
   ctx.fillRect(ship.x, ship.y, 20, 10);
 
-  /* ASTEROIDS (length contraction stays if you still want it) */
+  /* ASTEROIDS */
   asteroids.forEach(a => {
     let gamma = 1 / Math.sqrt(1 - speed * speed);
 
@@ -294,14 +272,14 @@ function draw() {
 }
 
 function gameOver() {
-  gameRunning = false;
+  running = false;
   document.getElementById("gameOver").innerHTML =
     "CRASHED<br><button onclick='location.reload()'>RESTART</button>";
   document.getElementById("gameOver").style.display = "block";
 }
 
 function winGame() {
-  gameRunning = false;
+  running = false;
   document.getElementById("gameOver").innerHTML =
     "EARTH REACHED<br><button onclick='location.reload()'>PLAY AGAIN</button>";
   document.getElementById("gameOver").style.display = "block";
